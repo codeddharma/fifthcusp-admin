@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//Users/neelshah/Personal/theFifthCusp/fifthcusp-express-be/src/models/**)",
+      "Read(//Users/neelshah/Personal/theFifthCusp/fifthcusp-next-fe/src/app/**)",
+      "Read(//Users/neelshah/Personal/theFifthCusp/fifthcusp-next-fe/src/**)",
+      "Bash(ls /Users/neelshah/Personal/theFifthCusp/fifthcusp-express-be/src/models/ && ls /Users/neelshah/Personal/theFifthCusp/fifthcusp-express-be/src/types/ 2>/dev/null)",
+      "Read(//Users/neelshah/Personal/theFifthCusp/fifthcusp-express-be/src/types/**)",
+      "Read(//Users/neelshah/Personal/theFifthCusp/fifthcusp-express-be/src/controllers/**)",
+      "Read(//Users/neelshah/Personal/theFifthCusp/fifthcusp-express-be/src/utils/**)",
+      "Read(//Users/neelshah/Personal/theFifthCusp/fifthcusp-express-be/src/services/**)"
+    ]
+  }
+}
