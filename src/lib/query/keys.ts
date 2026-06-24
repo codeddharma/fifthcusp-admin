@@ -79,4 +79,9 @@ export const qk = {
     all: () => ['remedyEvents'] as const,
     list: (params: unknown) => ['remedyEvents', 'list', params] as const,
   },
+  calendarEvents: {
+    all: () => ['calendarEvents'] as const,
+    list: (params: unknown) => ['calendarEvents', 'list', params] as const,
+    detail: (id: string) => ['calendarEvents', 'detail', id] as const,
+  },
 }

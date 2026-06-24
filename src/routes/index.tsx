@@ -39,6 +39,8 @@ import { RecurringOrdersListPage } from '@/features/recurring-orders/RecurringOr
 import { RecurringOrderFormPage } from '@/features/recurring-orders/RecurringOrderFormPage'
 import { ConsultationEventsPage } from '@/features/consultation-events/ConsultationEventsPage'
 import { RemedyEventsPage } from '@/features/remedy-events/RemedyEventsPage'
+import { CalendarEventsListPage } from '@/features/calendar-events/CalendarEventsListPage'
+import { CalendarEventFormPage } from '@/features/calendar-events/CalendarEventFormPage'
 import { NotFoundPage } from './notFound'
 
 export const router = createBrowserRouter([
@@ -418,6 +420,32 @@ export const router = createBrowserRouter([
         element: (
           <RequireRole resource="remedyEvents" action="read">
             <RemedyEventsPage />
+          </RequireRole>
+        ),
+      },
+
+      // Calendar Events (manifestation calendar)
+      {
+        path: 'calendar-events',
+        element: (
+          <RequireRole resource="calendarEvents" action="read">
+            <CalendarEventsListPage />
+          </RequireRole>
+        ),
+      },
+      {
+        path: 'calendar-events/new',
+        element: (
+          <RequireRole resource="calendarEvents" action="write">
+            <CalendarEventFormPage />
+          </RequireRole>
+        ),
+      },
+      {
+        path: 'calendar-events/:id/edit',
+        element: (
+          <RequireRole resource="calendarEvents" action="write">
+            <CalendarEventFormPage />
           </RequireRole>
         ),
       },

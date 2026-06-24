@@ -22,6 +22,7 @@ import {
   Repeat,
   CalendarDays,
   Bell,
+  Moon,
 } from 'lucide-react'
 import clsx from 'clsx'
 import { useAuth } from '@/lib/auth/useAuth'
@@ -51,6 +52,7 @@ const NAV: NavItem[] = [
   { to: '/recurring-orders', label: 'Recurring Orders', icon: Repeat, resource: 'paymentLinks' },
   { to: '/consultation-events', label: 'Consultations', icon: CalendarDays, resource: 'consultationEvents' },
   { to: '/remedy-events', label: 'Remedy Events', icon: Bell, resource: 'remedyEvents' },
+  { to: '/calendar-events', label: 'Calendar Events', icon: Moon, resource: 'calendarEvents' },
 ]
 
 export function AdminLayout() {
