@@ -10,7 +10,6 @@ import {
   MessageSquareQuote,
   Briefcase,
   Contact,
-  FileText,
   LogOut,
   Sparkles,
   UserCog,
@@ -23,6 +22,7 @@ import {
   CalendarDays,
   Bell,
   Moon,
+  AlertTriangle,
 } from 'lucide-react'
 import clsx from 'clsx'
 import { useAuth } from '@/lib/auth/useAuth'
@@ -45,7 +45,6 @@ const NAV: NavItem[] = [
   { to: '/faqs', label: 'FAQs', icon: HelpCircle, resource: 'faqs' },
   { to: '/testimonials', label: 'Testimonials', icon: MessageSquareQuote, resource: 'testimonials' },
   { to: '/careers', label: 'Careers', icon: Briefcase, resource: 'careers' },
-  { to: '/content', label: 'Page Content', icon: FileText, resource: 'content' },
   { to: '/page-meta', label: 'SEO Meta', icon: Search, resource: 'pageMeta' },
   { to: '/coupons', label: 'Coupons', icon: Tag, resource: 'coupons' },
   { to: '/payment-links', label: 'Payment Links', icon: Link2, resource: 'paymentLinks' },
@@ -53,6 +52,7 @@ const NAV: NavItem[] = [
   { to: '/consultation-events', label: 'Consultations', icon: CalendarDays, resource: 'consultationEvents' },
   { to: '/remedy-events', label: 'Remedy Events', icon: Bell, resource: 'remedyEvents' },
   { to: '/calendar-events', label: 'Calendar Events', icon: Moon, resource: 'calendarEvents' },
+  { to: '/disclaimer-banner', label: 'Disclaimer Banner', icon: AlertTriangle, resource: 'disclaimerBanner' },
 ]
 
 export function AdminLayout() {

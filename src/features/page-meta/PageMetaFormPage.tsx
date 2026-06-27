@@ -16,7 +16,7 @@ import { FormField } from '@/components/forms/FormField'
 import { TagInput } from '@/components/forms/TagInput'
 import { toApiError } from '@/lib/api/errors'
 
-const KNOWN_PAGES = ['/', '/astrology', '/energy', '/vastu', '/manifestation', '/material', '/tarot-reading', '/careers']
+const KNOWN_PAGES = ['/', '/astrology', '/energy', '/vastu', '/manifestation', '/wealth', '/tarot-reading', '/careers']
 
 const schema = z.object({
   pagePath: z.string().min(1, 'Page path is required'),

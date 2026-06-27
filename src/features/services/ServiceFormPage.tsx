@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Controller, FormProvider, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -13,14 +13,21 @@ import { Select } from '@/components/ui/Select'
 import { Checkbox } from '@/components/ui/Checkbox'
 import { Button } from '@/components/ui/Button'
 import { FormField } from '@/components/forms/FormField'
-import { TagInput } from '@/components/forms/TagInput'
 import { toApiError } from '@/lib/api/errors'
 import { serviceSchema, type ServiceFormParsed, type ServiceFormValues } from '@/lib/forms/schemas/service.schema'
-import { SERVICE_TYPES } from '@/types/service'
-import { PAGE_KEYS } from '@/lib/constants/pages'
+import { ASTROLOGY_TYPES, GENERIC_TYPES } from '@/types/service'
+import { PagesOrderField } from './components/PagesOrderField'
 import { FormInputsFieldArray } from './components/FormInputsFieldArray'
 import { FileUploadsFieldArray } from './components/FileUploadsFieldArray'
 import { AddOnsFieldArray } from './components/AddOnsFieldArray'
+
+const DEFAULT_FORM_INPUTS: ServiceFormValues['formInputs'] = [
+  { fieldKey: 'firstName', label: 'First Name', type: 'text', isRequired: true, order: 0, validation: { maxLength: 100 } },
+  { fieldKey: 'lastName', label: 'Last Name', type: 'text', isRequired: true, order: 1, validation: { maxLength: 100 } },
+  { fieldKey: 'email', label: 'Email Address', type: 'email', isRequired: true, order: 2 },
+  { fieldKey: 'phone', label: 'Phone Number', type: 'phonenumber', isRequired: true, order: 3 },
+  { fieldKey: 'dateOfBirth', label: 'Date of Birth', type: 'date', isRequired: true, order: 4 },
+]
 
 const DEFAULTS: ServiceFormValues = {
   sku: '',
@@ -30,7 +37,7 @@ const DEFAULTS: ServiceFormValues = {
   price: 0,
   type: 'basic',
   pages: [],
-  formInputs: [],
+  formInputs: DEFAULT_FORM_INPUTS,
   fileUploads: [],
   addOns: [],
   repeatableGroup: undefined,
@@ -59,11 +66,14 @@ function withDerivedOrder(parsed: ServiceFormParsed): ServiceFormParsed {
   }
 }
 
+type Step = 1 | 2 | 3
+
 export function ServiceFormPage() {
   const { id } = useParams<{ id?: string }>()
   const isEdit = !!id
   const navigate = useNavigate()
   const qc = useQueryClient()
+  const [step, setStep] = useState<Step>(1)
 
   const { data: existing, isLoading } = useQuery({
     queryKey: id ? qk.services.detail(id) : ['services', 'detail', 'new'],
@@ -73,7 +83,7 @@ export function ServiceFormPage() {
 
   const form = useForm<ServiceFormValues>({
     resolver: zodResolver(serviceSchema) as never,
-    defaultValues: DEFAULTS,
+    defaultValues: isEdit ? { ...DEFAULTS, formInputs: [] } : DEFAULTS,
   })
 
   useEffect(() => {
@@ -127,6 +137,14 @@ export function ServiceFormPage() {
   if (isEdit && isLoading) return null
   const submitting = create.isPending || update.isPending
   const errs = form.formState.errors
+  const pages = form.watch('pages')
+  const isAstrologyPage = pages.some((p) => p.page === 'astrology')
+  const allowedTypes = isAstrologyPage ? ASTROLOGY_TYPES : GENERIC_TYPES
+
+  const goNext = async (fields: (keyof ServiceFormValues)[]) => {
+    const valid = await form.trigger(fields)
+    if (valid) setStep((s) => Math.min(3, s + 1) as Step)
+  }
 
   return (
     <FormProvider {...form}>
@@ -139,149 +157,177 @@ export function ServiceFormPage() {
         >
           <Card>
             <CardHeader>
-              <CardTitle>{isEdit ? 'Edit service' : 'New service'}</CardTitle>
+              <CardTitle>
+                {isEdit ? 'Edit service' : 'New service'} — Step {step} of 3
+              </CardTitle>
             </CardHeader>
 
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <FormField label="SKU" required error={errs.sku?.message} hint="Auto-uppercased on save">
-                <Input
-                  {...form.register('sku', {
-                    onChange: (e) => {
-                      e.target.value = e.target.value.toUpperCase()
-                    },
-                  })}
-                  placeholder="ASTRO-BASIC-01"
-                />
-              </FormField>
-              <FormField label="Price (₹)" required error={errs.price?.message}>
-                <Input type="number" min={0} {...form.register('price', { valueAsNumber: true })} />
-              </FormField>
-              <FormField label="Title" required error={errs.title?.message} className="col-span-2">
-                <Input {...form.register('title')} />
-              </FormField>
-              <FormField label="Subtitle" required error={errs.subtitle?.message} className="col-span-2">
-                <Input {...form.register('subtitle')} />
-              </FormField>
-              <FormField label="Description" required error={errs.description?.message} className="col-span-2">
-                <Textarea rows={4} {...form.register('description')} />
-              </FormField>
-              <FormField label="Type" required error={errs.type?.message}>
-                <Select {...form.register('type')}>
-                  {SERVICE_TYPES.map((t) => (
-                    <option key={t} value={t}>
-                      {t}
-                    </option>
-                  ))}
-                </Select>
-              </FormField>
-              <FormField label="Discount %" error={errs.discountPercentage?.message}>
-                <Input
-                  type="number"
-                  min={0}
-                  max={100}
-                  {...form.register('discountPercentage', { valueAsNumber: true })}
-                />
-              </FormField>
-              <FormField label="Pages" required error={errs.pages?.message} className="col-span-2">
-                <Controller
-                  name="pages"
-                  control={form.control as never}
-                  render={({ field }) => (
-                    <TagInput
-                      value={field.value}
-                      onChange={field.onChange}
-                      placeholder={`e.g. ${PAGE_KEYS.slice(0, 3).join(', ')}…`}
-                    />
-                  )}
-                />
-              </FormField>
-            </div>
+            {step === 1 ? (
+              <div className="flex flex-col gap-4">
+                <PagesOrderField control={form.control as never} currentId={id} />
+                <div className="flex justify-end">
+                  <Button type="button" onClick={() => goNext(['pages'])}>
+                    Next
+                  </Button>
+                </div>
+              </div>
+            ) : null}
 
-            <div className="mt-3 flex flex-wrap gap-4">
-              <Checkbox label="Active service" {...form.register('isActiveService')} />
-              <Checkbox label="In sale" {...form.register('isInSale')} />
-              <Checkbox label="Has sale banner" {...form.register('hasSaleBanner')} />
-            </div>
-
-            <FormField label="Sale title" className="mt-3">
-              <Input {...form.register('saleTitle')} />
-            </FormField>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Delivery &amp; notifications</CardTitle>
-            </CardHeader>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <FormField
-                label="Delivery days"
-                hint="SLA from payment — deadline shown in admin dashboard"
-                error={(errs as Record<string, { message?: string }>).deliveryDays?.message}
-              >
-                <Input
-                  type="number"
-                  min={1}
-                  {...form.register('deliveryDays', { valueAsNumber: true })}
-                />
-              </FormField>
-            </div>
-            <div className="mt-3 flex flex-wrap gap-4">
-              <Checkbox
-                label="Requires consultation (sends scheduling email on payment)"
-                {...form.register('requiresConsultation')}
-              />
-              <Checkbox
-                label="Requires output file (enables PDF upload in order panel)"
-                {...form.register('requiresOutputFile')}
-              />
-              <Checkbox
-                label="Request customer feedback after completion"
-                {...form.register('feedbackEmailEnabled')}
-              />
-            </div>
-            {form.watch('requiresConsultation') && (
-              <div className="mt-4 max-w-xs">
-                <FormField label="Consultation Duration (minutes)" error={form.formState.errors.consultationDurationMinutes?.message}>
-                  <Input
-                    type="number"
-                    min={15}
-                    step={15}
-                    {...form.register('consultationDurationMinutes', { valueAsNumber: true })}
+            {step === 2 ? (
+              <div className="flex flex-col gap-4">
+                <FormField label="Type" required error={errs.type?.message} hint={`Allowed for selected page(s): ${allowedTypes.join(', ')}`}>
+                  <Controller
+                    name="type"
+                    control={form.control}
+                    render={({ field }) => (
+                      <Select {...field}>
+                        {allowedTypes.map((t) => (
+                          <option key={t} value={t}>
+                            {t}
+                          </option>
+                        ))}
+                      </Select>
+                    )}
                   />
                 </FormField>
+                <div className="flex justify-between">
+                  <Button type="button" variant="secondary" onClick={() => setStep(1)}>
+                    Back
+                  </Button>
+                  <Button type="button" onClick={() => goNext(['type'])}>
+                    Next
+                  </Button>
+                </div>
               </div>
-            )}
-          </Card>
+            ) : null}
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Form inputs</CardTitle>
-            </CardHeader>
-            <FormInputsFieldArray name="formInputs" control={form.control as never} />
-          </Card>
+            {step === 3 ? (
+              <div className="flex flex-col gap-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <FormField label="SKU" required error={errs.sku?.message} hint="Auto-uppercased on save">
+                    <Input
+                      {...form.register('sku', {
+                        onChange: (e) => {
+                          e.target.value = e.target.value.toUpperCase()
+                        },
+                      })}
+                      placeholder="ASTRO-BASIC-01"
+                    />
+                  </FormField>
+                  <FormField label="Price (₹)" required error={errs.price?.message}>
+                    <Input type="number" min={0} {...form.register('price', { valueAsNumber: true })} />
+                  </FormField>
+                  <FormField label="Title" required error={errs.title?.message} className="col-span-2">
+                    <Input {...form.register('title')} />
+                  </FormField>
+                  <FormField label="Subtitle" required error={errs.subtitle?.message} className="col-span-2">
+                    <Input {...form.register('subtitle')} />
+                  </FormField>
+                  <FormField label="Description" required error={errs.description?.message} className="col-span-2">
+                    <Textarea rows={4} {...form.register('description')} />
+                  </FormField>
+                  <FormField label="Discount %" error={errs.discountPercentage?.message}>
+                    <Input
+                      type="number"
+                      min={0}
+                      max={100}
+                      {...form.register('discountPercentage', { valueAsNumber: true })}
+                    />
+                  </FormField>
+                </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>File uploads</CardTitle>
-            </CardHeader>
-            <FileUploadsFieldArray name="fileUploads" control={form.control as never} />
-          </Card>
+                <div className="flex flex-wrap gap-4">
+                  <Checkbox label="Active service" {...form.register('isActiveService')} />
+                  <Checkbox label="In sale" {...form.register('isInSale')} />
+                  <Checkbox label="Has sale banner" {...form.register('hasSaleBanner')} />
+                </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Add-ons</CardTitle>
-            </CardHeader>
-            <AddOnsFieldArray control={form.control as never} />
-          </Card>
+                <FormField label="Sale title">
+                  <Input {...form.register('saleTitle')} />
+                </FormField>
 
-          <div className="flex justify-end gap-2">
-            <Button type="button" variant="secondary" onClick={() => navigate('/services')}>
-              Cancel
-            </Button>
-            <Button type="submit" loading={submitting}>
-              {isEdit ? 'Save service' : 'Create service'}
-            </Button>
-          </div>
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Delivery &amp; notifications</CardTitle>
+                  </CardHeader>
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <FormField
+                      label="Delivery days"
+                      hint="SLA from payment — deadline shown in admin dashboard"
+                      error={(errs as Record<string, { message?: string }>).deliveryDays?.message}
+                    >
+                      <Input
+                        type="number"
+                        min={1}
+                        {...form.register('deliveryDays', { valueAsNumber: true })}
+                      />
+                    </FormField>
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-4">
+                    <Checkbox
+                      label="Requires consultation (sends scheduling email on payment)"
+                      {...form.register('requiresConsultation')}
+                    />
+                    <Checkbox
+                      label="Requires output file (enables PDF upload in order panel)"
+                      {...form.register('requiresOutputFile')}
+                    />
+                    <Checkbox
+                      label="Request customer feedback after completion"
+                      {...form.register('feedbackEmailEnabled')}
+                    />
+                  </div>
+                  {form.watch('requiresConsultation') && (
+                    <div className="mt-4 max-w-xs">
+                      <FormField label="Consultation Duration (minutes)" error={form.formState.errors.consultationDurationMinutes?.message}>
+                        <Input
+                          type="number"
+                          min={15}
+                          step={15}
+                          {...form.register('consultationDurationMinutes', { valueAsNumber: true })}
+                        />
+                      </FormField>
+                    </div>
+                  )}
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Form inputs</CardTitle>
+                  </CardHeader>
+                  <FormInputsFieldArray name="formInputs" control={form.control as never} />
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>File uploads</CardTitle>
+                  </CardHeader>
+                  <FileUploadsFieldArray name="fileUploads" control={form.control as never} />
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Add-ons</CardTitle>
+                  </CardHeader>
+                  <AddOnsFieldArray control={form.control as never} />
+                </Card>
+
+                <div className="flex justify-between">
+                  <Button type="button" variant="secondary" onClick={() => setStep(2)}>
+                    Back
+                  </Button>
+                  <div className="flex gap-2">
+                    <Button type="button" variant="secondary" onClick={() => navigate('/services')}>
+                      Cancel
+                    </Button>
+                    <Button type="submit" loading={submitting}>
+                      {isEdit ? 'Save service' : 'Create service'}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ) : null}
+          </Card>
         </form>
       </div>
     </FormProvider>

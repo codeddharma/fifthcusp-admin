@@ -6,7 +6,7 @@ export const PAGE_KEYS = [
   'tarot',
   'energy',
   'manifestation',
-  'material',
+  'wealth',
   'blogs',
   'careers',
   'about',

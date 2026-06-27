@@ -41,6 +41,7 @@ import { ConsultationEventsPage } from '@/features/consultation-events/Consultat
 import { RemedyEventsPage } from '@/features/remedy-events/RemedyEventsPage'
 import { CalendarEventsListPage } from '@/features/calendar-events/CalendarEventsListPage'
 import { CalendarEventFormPage } from '@/features/calendar-events/CalendarEventFormPage'
+import { DisclaimerBannerPage } from '@/features/disclaimer-banner/DisclaimerBannerPage'
 import { NotFoundPage } from './notFound'
 
 export const router = createBrowserRouter([
@@ -446,6 +447,16 @@ export const router = createBrowserRouter([
         element: (
           <RequireRole resource="calendarEvents" action="write">
             <CalendarEventFormPage />
+          </RequireRole>
+        ),
+      },
+
+      // Disclaimer Banner (header scrolling banner)
+      {
+        path: 'disclaimer-banner',
+        element: (
+          <RequireRole resource="disclaimerBanner" action="read">
+            <DisclaimerBannerPage />
           </RequireRole>
         ),
       },

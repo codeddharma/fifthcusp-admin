@@ -16,6 +16,7 @@ export type Resource =
   | 'consultationEvents'
   | 'remedyEvents'
   | 'calendarEvents'
+  | 'disclaimerBanner'
 
 export type Action = 'read' | 'write' | 'delete'
 
@@ -39,6 +40,7 @@ export const PERMISSIONS: Matrix = {
   consultationEvents: { read: ['admin', 'manager'], write: ['admin', 'manager'], delete: ['admin', 'manager'] },
   remedyEvents: { read: ['admin', 'manager'], write: ['admin', 'manager'], delete: ['admin', 'manager'] },
   calendarEvents: { read: ['admin', 'manager'], write: ['admin', 'manager'], delete: ['admin', 'manager'] },
+  disclaimerBanner: { read: ['admin', 'manager'], write: ['admin'], delete: ['admin'] },
 }
 
 export function can(role: UserRole | undefined, resource: Resource, action: Action): boolean {

@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { useForm } from 'react-hook-form'
+import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
@@ -10,10 +10,10 @@ import { qk } from '@/lib/query/keys'
 import { Card, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
-import { Textarea } from '@/components/ui/Textarea'
 import { Switch } from '@/components/ui/Switch'
 import { Button } from '@/components/ui/Button'
 import { FormField } from '@/components/forms/FormField'
+import { RichTextEditor } from '@/components/forms/RichTextEditor'
 import { toApiError } from '@/lib/api/errors'
 import { EVENT_TYPE_OPTIONS } from '@/types/calendarEvent'
 
@@ -126,7 +126,18 @@ export function CalendarEventFormPage() {
           </div>
 
           <FormField label="Description" error={errs.description?.message} hint="Shown when a visitor opens the event details">
-            <Textarea rows={5} {...form.register('description')} />
+            <Controller
+              name="description"
+              control={form.control}
+              render={({ field }) => (
+                <RichTextEditor
+                  value={field.value ?? ''}
+                  onChange={field.onChange}
+                  placeholder="Shown when a visitor opens the event details"
+                  minHeight="10rem"
+                />
+              )}
+            />
           </FormField>
 
           <Switch

@@ -68,8 +68,8 @@ export function ServiceDetailPage() {
           <dt className="text-shell-muted">Pages</dt>
           <dd className="flex flex-wrap gap-1">
             {data.pages.map((p) => (
-              <Badge key={p} tone="neutral">
-                {p}
+              <Badge key={p.page} tone="neutral">
+                {p.page} (#{p.order})
               </Badge>
             ))}
           </dd>

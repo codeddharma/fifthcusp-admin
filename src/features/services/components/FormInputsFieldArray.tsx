@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { Control, Controller, useFieldArray, useFormContext, useWatch } from 'react-hook-form'
 import { Plus, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
@@ -41,6 +42,7 @@ export function FormInputsFieldArray({ name, control }: Props) {
             type: 'text',
             isRequired: false,
             order: fa.fields.length,
+            validation: { maxLength: 100 },
           })
         }
       >
@@ -60,7 +62,15 @@ interface RowProps {
 }
 
 function FieldRow({ baseName, index, onRemove, register, control }: RowProps) {
+  const { setValue, getValues } = useFormContext()
   const type = useWatch({ control, name: `${baseName}.type` }) as FieldType | undefined
+
+  useEffect(() => {
+    if (type === 'text' && !getValues(`${baseName}.validation.maxLength`)) {
+      setValue(`${baseName}.validation.maxLength`, 100)
+    }
+  }, [type, baseName, getValues, setValue])
+
   const showOptions = type === 'dropdown' || type === 'multiSelect' || type === 'radio'
   const showNumber = type === 'number'
   const showDate = type === 'date'

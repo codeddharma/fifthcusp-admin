@@ -30,6 +30,10 @@ export const SERVICE_TYPES: ServiceType[] = [
   'reports_advanced',
 ]
 
+export const ASTROLOGY_TYPES: ServiceType[] = ['numerology', 'consultation', 'reports_basic', 'reports_advanced']
+
+export const GENERIC_TYPES: ServiceType[] = ['basic', 'advanced', 'practice']
+
 export const FIELD_TYPES: FieldType[] = [
   'text',
   'textarea',
@@ -77,6 +81,11 @@ export interface FileUploadField {
   order: number
 }
 
+export interface ServicePage {
+  page: string
+  order: number
+}
+
 export interface ServiceAddOn {
   key: string
   label: string
@@ -100,7 +109,7 @@ export interface Service {
   description: string
   price: number
   type: ServiceType
-  pages: string[]
+  pages: ServicePage[]
   formInputs: FormInput[]
   fileUploads: FileUploadField[]
   addOns: ServiceAddOn[]

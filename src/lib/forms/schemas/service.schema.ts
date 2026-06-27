@@ -1,4 +1,7 @@
 import { z } from 'zod'
+import { ASTROLOGY_TYPES, GENERIC_TYPES } from '@/types/service'
+
+const emptyToUndefined = (v: unknown) => (v === '' || v === undefined ? undefined : v)
 
 const fieldTypeEnum = z.enum([
   'text',
@@ -16,13 +19,13 @@ const fieldTypeEnum = z.enum([
 
 const validationSchema = z
   .object({
-    minLength: z.coerce.number().int().min(0).optional(),
-    maxLength: z.coerce.number().int().min(1).optional(),
+    minLength: z.preprocess(emptyToUndefined, z.coerce.number().int().min(0).optional()),
+    maxLength: z.preprocess(emptyToUndefined, z.coerce.number().int().min(1).optional()),
     pattern: z.string().optional(),
     minDate: z.string().optional(),
     maxDate: z.string().optional(),
-    min: z.coerce.number().optional(),
-    max: z.coerce.number().optional(),
+    min: z.preprocess(emptyToUndefined, z.coerce.number().optional()),
+    max: z.preprocess(emptyToUndefined, z.coerce.number().optional()),
   })
   .optional()
 
@@ -66,7 +69,9 @@ export const serviceSchema = z
     description: z.string().min(1),
     price: z.coerce.number().min(0),
     type: z.enum(['basic', 'advanced', 'practice', 'numerology', 'consultation', 'reports_basic', 'reports_advanced']),
-    pages: z.array(z.string()).min(1, 'Select at least one page'),
+    pages: z
+      .array(z.object({ page: z.string().min(1), order: z.coerce.number().int().min(0) }))
+      .min(1, 'Select at least one page'),
     formInputs: z.array(formInputSchema).default([]),
     fileUploads: z.array(fileUploadSchema).default([]),
     addOns: z.array(addOnSchema).default([]),
@@ -89,15 +94,16 @@ export const serviceSchema = z
     feedbackEmailEnabled: z.boolean().default(false),
   })
   .superRefine((data, ctx) => {
-    if (data.pages.includes('astrology')) {
-      const allowed = ['basic', 'advanced', 'practice', 'consultation', 'reports_basic', 'reports_advanced']
-      if (!allowed.includes(data.type)) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ['type'],
-          message: 'Astrology services must use basic/advanced/practice/consultation/reports_basic/reports_advanced',
-        })
-      }
+    const isAstrologyPage = data.pages.some((p) => p.page === 'astrology')
+    const allowed: readonly string[] = isAstrologyPage ? ASTROLOGY_TYPES : GENERIC_TYPES
+    if (!allowed.includes(data.type)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['type'],
+        message: isAstrologyPage
+          ? 'Astrology page services must use: numerology, consultation, reports_basic, or reports_advanced'
+          : 'numerology, consultation, reports_basic, reports_advanced types are only valid for the astrology page',
+      })
     }
   })
 
