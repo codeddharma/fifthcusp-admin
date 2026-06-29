@@ -1,3 +1,5 @@
+import type { ServiceType } from './service'
+
 export type UserRole = 'admin' | 'manager' | 'employee'
 
 export interface User {
@@ -6,6 +8,7 @@ export interface User {
   email: string
   role: UserRole
   isActive: boolean
+  specialties?: ServiceType[]
   createdBy?: string
   createdAt: string
   updatedAt: string
@@ -16,6 +19,7 @@ export interface CreateUserInput {
   email: string
   password: string
   role: UserRole
+  specialties?: ServiceType[]
 }
 
 export interface UpdateUserInput {
@@ -23,4 +27,5 @@ export interface UpdateUserInput {
   email?: string
   role?: UserRole
   isActive?: boolean
+  specialties?: ServiceType[]
 }

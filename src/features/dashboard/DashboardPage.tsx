@@ -30,6 +30,8 @@ import type { Order, OrderStatus } from '@/types/order'
 
 export function DashboardPage() {
   const { user } = useAuth()
+  const isAdmin = user?.role === 'admin'
+  const isEmployee = user?.role === 'employee'
   const qc = useQueryClient()
   const canOrders = can(user?.role, 'orders', 'read')
   const canCustomers = can(user?.role, 'customers', 'read')
@@ -104,8 +106,14 @@ export function DashboardPage() {
   const deadlinesQ = useQuery({
     queryKey: ['orders', 'deadlines'],
     queryFn: () => OrdersApi.getDeadlines(),
-    enabled: canOrders,
+    enabled: isAdmin,
     refetchInterval: 5 * 60 * 1000,
+  })
+
+  const myPendingOrdersQ = useQuery({
+    queryKey: qk.orders.list({ kpi: 'myPending', limit: 200 }),
+    queryFn: () => OrdersApi.list({ limit: 200 }),
+    enabled: isEmployee,
   })
 
   const consultationsQ = useQuery({
@@ -142,6 +150,11 @@ export function DashboardPage() {
   })
 
   const chartData = useMemo(() => buildChartData(recentOrdersQ.data?.items ?? []), [recentOrdersQ.data])
+
+  const FINISHED_STATUSES: OrderStatus[] = ['completed', 'awaiting_feedback', 'closed', 'cancelled']
+  const myPendingOrdersCount = (myPendingOrdersQ.data?.items ?? []).filter(
+    (o) => !FINISHED_STATUSES.includes(o.orderStatus),
+  ).length
 
   const consultations = consultationsQ.data?.items ?? []
   const remedies = remediesQ.data?.items ?? []
@@ -189,6 +202,16 @@ export function DashboardPage() {
       <h1 className="text-xl font-semibold text-shell-heading">Welcome back, {user?.name?.split(' ')[0] ?? 'admin'}.</h1>
 
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+        {isEmployee ? (
+          <KpiCard
+            label="My pending orders"
+            tone="warning"
+            value={myPendingOrdersCount}
+            loading={myPendingOrdersQ.isLoading}
+            to="/orders"
+          />
+        ) : null}
+
         {canOrders ? (
           <>
             <KpiCard
@@ -289,7 +312,7 @@ export function DashboardPage() {
         ) : null}
       </div>
 
-      {canOrders ? (
+      {isAdmin ? (
         <Card>
           <CardHeader>
             <CardTitle>Delivery deadlines at risk</CardTitle>

@@ -4,6 +4,7 @@ import { useRef, useState } from 'react'
 import { Download, Mail, Upload } from 'lucide-react'
 import { toast } from 'sonner'
 import { OrdersApi } from '@/lib/api/orders.api'
+import { UsersApi } from '@/lib/api/users.api'
 import { qk } from '@/lib/query/keys'
 import { Card, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
@@ -18,9 +19,11 @@ import { toApiError } from '@/lib/api/errors'
 import { ORDER_STATUSES, type OrderStatus } from '@/types/order'
 import { allowedNextStatuses } from '@/lib/constants/orderTransitions'
 import { Video, ExternalLink } from 'lucide-react'
+import { useAuth } from '@/lib/auth/useAuth'
 
 export function OrderDetailPage() {
   const { id } = useParams<{ id: string }>()
+  const { user } = useAuth()
   const qc = useQueryClient()
   const [status, setStatus] = useState<OrderStatus | ''>('')
   const [note, setNote] = useState('')
@@ -29,6 +32,21 @@ export function OrderDetailPage() {
     queryKey: qk.orders.detail(id!),
     queryFn: () => OrdersApi.get(id!),
     enabled: !!id,
+  })
+
+  const { data: employeesData } = useQuery({
+    queryKey: qk.users.list({ role: 'employee' }),
+    queryFn: () => UsersApi.list({ role: 'employee', limit: 200 }),
+    enabled: user?.role === 'admin',
+  })
+
+  const assignOrder = useMutation({
+    mutationFn: (userId: string | null) => OrdersApi.assign(id!, userId),
+    onSuccess: () => {
+      toast.success('Assignment updated')
+      qc.invalidateQueries({ queryKey: qk.orders.detail(id!) })
+    },
+    onError: (e) => toast.error(toApiError(e).message),
   })
 
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -75,6 +93,8 @@ export function OrderDetailPage() {
   const customer = typeof data.customerId === 'object' ? data.customerId : null
   const service = typeof data.serviceId === 'object' ? data.serviceId : null
   const requiresOutputFile = service?.requiresOutputFile ?? false
+  const assignee = typeof data.assignedTo === 'object' ? data.assignedTo : null
+  const employees = employeesData?.items ?? []
 
   async function onDownload(fieldKey: string, addOnKey: string | undefined, name: string) {
     try {
@@ -107,6 +127,25 @@ export function OrderDetailPage() {
           </dd>
           <dt className="text-shell-muted">Customer</dt>
           <dd>{customer ? `${customer.name} · ${customer.email} · ${customer.phone}` : '—'}</dd>
+          <dt className="text-shell-muted">Assigned to</dt>
+          <dd>
+            {user?.role === 'admin' ? (
+              <Select
+                value={assignee?._id ?? ''}
+                onChange={(e) => assignOrder.mutate(e.target.value || null)}
+                disabled={assignOrder.isPending}
+              >
+                <option value="">Unassigned</option>
+                {employees.map((e) => (
+                  <option key={e._id} value={e._id}>
+                    {e.name} ({e.email})
+                  </option>
+                ))}
+              </Select>
+            ) : (
+              assignee?.name ?? '—'
+            )}
+          </dd>
           <dt className="text-shell-muted">Quantity</dt>
           <dd>{data.quantity}</dd>
           <dt className="text-shell-muted">Total</dt>

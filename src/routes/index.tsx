@@ -42,6 +42,7 @@ import { RemedyEventsPage } from '@/features/remedy-events/RemedyEventsPage'
 import { CalendarEventsListPage } from '@/features/calendar-events/CalendarEventsListPage'
 import { CalendarEventFormPage } from '@/features/calendar-events/CalendarEventFormPage'
 import { DisclaimerBannerPage } from '@/features/disclaimer-banner/DisclaimerBannerPage'
+import { NotepadPage } from '@/features/notepad/NotepadPage'
 import { NotFoundPage } from './notFound'
 
 export const router = createBrowserRouter([
@@ -457,6 +458,16 @@ export const router = createBrowserRouter([
         element: (
           <RequireRole resource="disclaimerBanner" action="read">
             <DisclaimerBannerPage />
+          </RequireRole>
+        ),
+      },
+
+      // Internal Notepad (private per-user scratchpad)
+      {
+        path: 'notepad',
+        element: (
+          <RequireRole resource="notepad" action="read">
+            <NotepadPage />
           </RequireRole>
         ),
       },

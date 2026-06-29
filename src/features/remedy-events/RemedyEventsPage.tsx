@@ -16,6 +16,7 @@ import { Textarea } from '@/components/ui/Textarea'
 import { formatDateTime } from '@/lib/utils/format'
 import { toApiError } from '@/lib/api/errors'
 import type { RemedyEvent } from '@/types/remedyEvent'
+import { useAuth } from '@/lib/auth/useAuth'
 
 // ──────────────────────────────────────────────
 // Create Remedy Modal
@@ -142,11 +143,13 @@ function RemedyDetailModal({
   onClose,
   onDelete,
   deleting,
+  canDelete,
 }: {
   event: RemedyEvent | null
   onClose: () => void
   onDelete: (id: string) => void
   deleting: boolean
+  canDelete: boolean
 }) {
   if (!event) return null
   const customer = typeof event.customerId === 'object' ? event.customerId : null
@@ -183,14 +186,16 @@ function RemedyDetailModal({
       </div>
       <div className="flex justify-end gap-2 mt-5">
         <Button variant="ghost" onClick={onClose}>Close</Button>
-        <Button
-          variant="danger"
-          onClick={() => onDelete(event._id)}
-          loading={deleting}
-          leftIcon={<Trash2 size={14} />}
-        >
-          Delete
-        </Button>
+        {canDelete && (
+          <Button
+            variant="danger"
+            onClick={() => onDelete(event._id)}
+            loading={deleting}
+            leftIcon={<Trash2 size={14} />}
+          >
+            Delete
+          </Button>
+        )}
       </div>
     </Modal>
   )
@@ -201,6 +206,8 @@ function RemedyDetailModal({
 // ──────────────────────────────────────────────
 
 export function RemedyEventsPage() {
+  const { user } = useAuth()
+  const canDelete = user?.role === 'admin' || user?.role === 'manager'
   const qc = useQueryClient()
   const [createOpen, setCreateOpen] = useState(false)
   const [selectedEvent, setSelectedEvent] = useState<RemedyEvent | null>(null)
@@ -267,6 +274,7 @@ export function RemedyEventsPage() {
         onClose={() => setSelectedEvent(null)}
         onDelete={remove.mutate}
         deleting={remove.isPending}
+        canDelete={canDelete}
       />
     </div>
   )

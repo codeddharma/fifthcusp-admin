@@ -104,6 +104,7 @@ export interface Order {
   statusHistory: StatusHistoryEntry[]
   timeline?: TimelineEntry[]
   consultation?: OrderConsultation
+  assignedTo?: string | { _id: string; name: string; email: string }
   filesPurgedAt?: string
   deadline?: string
   outputFiles: OutputFile[]

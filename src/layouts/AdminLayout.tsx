@@ -23,6 +23,7 @@ import {
   Bell,
   Moon,
   AlertTriangle,
+  NotebookPen,
 } from 'lucide-react'
 import clsx from 'clsx'
 import { useAuth } from '@/lib/auth/useAuth'
@@ -53,6 +54,7 @@ const NAV: NavItem[] = [
   { to: '/remedy-events', label: 'Remedy Events', icon: Bell, resource: 'remedyEvents' },
   { to: '/calendar-events', label: 'Calendar Events', icon: Moon, resource: 'calendarEvents' },
   { to: '/disclaimer-banner', label: 'Disclaimer Banner', icon: AlertTriangle, resource: 'disclaimerBanner' },
+  { to: '/notepad', label: 'Notepad', icon: NotebookPen, resource: 'notepad' },
 ]
 
 export function AdminLayout() {

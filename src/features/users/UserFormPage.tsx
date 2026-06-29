@@ -14,6 +14,9 @@ import { Checkbox } from '@/components/ui/Checkbox'
 import { Button } from '@/components/ui/Button'
 import { FormField } from '@/components/forms/FormField'
 import { toApiError } from '@/lib/api/errors'
+import { SERVICE_TYPES, type ServiceType } from '@/types/service'
+
+const specialtiesField = z.array(z.enum(SERVICE_TYPES as [ServiceType, ...ServiceType[]])).default([])
 
 const createSchema = z.object({
   name: z.string().min(1),
@@ -21,6 +24,7 @@ const createSchema = z.object({
   role: z.enum(['admin', 'manager', 'employee']),
   password: z.string().min(8, 'At least 8 characters'),
   isActive: z.boolean().default(true),
+  specialties: specialtiesField,
 })
 
 const editSchema = z.object({
@@ -28,6 +32,7 @@ const editSchema = z.object({
   email: z.string().email(),
   role: z.enum(['admin', 'manager', 'employee']),
   isActive: z.boolean(),
+  specialties: specialtiesField,
 })
 
 type CreateValues = z.infer<typeof createSchema>
@@ -48,19 +53,32 @@ export function UserFormPage() {
   const form = useForm<CreateValues | EditValues>({
     resolver: zodResolver(isEdit ? editSchema : createSchema),
     defaultValues: isEdit
-      ? { name: '', email: '', role: 'employee', isActive: true }
-      : { name: '', email: '', role: 'employee', password: '', isActive: true },
+      ? { name: '', email: '', role: 'employee', isActive: true, specialties: [] }
+      : { name: '', email: '', role: 'employee', password: '', isActive: true, specialties: [] },
   })
 
   useEffect(() => {
     if (existing) {
-      form.reset({ name: existing.name, email: existing.email, role: existing.role, isActive: existing.isActive })
+      form.reset({
+        name: existing.name,
+        email: existing.email,
+        role: existing.role,
+        isActive: existing.isActive,
+        specialties: existing.specialties ?? [],
+      })
     }
   }, [existing, form])
 
+  const role = form.watch('role')
+
+  function toggleSpecialty(type: ServiceType) {
+    const current = form.getValues('specialties') ?? []
+    form.setValue('specialties', current.includes(type) ? current.filter((t) => t !== type) : [...current, type])
+  }
+
   const create = useMutation({
     mutationFn: (v: CreateValues) =>
-      UsersApi.create({ name: v.name, email: v.email, role: v.role, password: v.password }),
+      UsersApi.create({ name: v.name, email: v.email, role: v.role, password: v.password, specialties: v.specialties }),
     onSuccess: () => {
       toast.success('User created')
       qc.invalidateQueries({ queryKey: qk.users.all() })
@@ -115,6 +133,27 @@ export function UserFormPage() {
             </FormField>
           ) : null}
           <Checkbox label="Active" {...form.register('isActive')} />
+
+          {role === 'employee' && (
+            <div className="border-t border-shell-border pt-4">
+              <p className="mb-2 text-sm font-medium text-shell-muted">
+                Specialties (which call/order types this employee can be assigned)
+              </p>
+              <div className="flex flex-col gap-1">
+                {SERVICE_TYPES.map((type) => (
+                  <label key={type} className="flex cursor-pointer items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={(form.watch('specialties') ?? []).includes(type)}
+                      onChange={() => toggleSpecialty(type)}
+                      className="rounded border-shell-border"
+                    />
+                    <span>{type}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="mt-2 flex justify-end gap-2">
             <Button type="button" variant="secondary" onClick={() => navigate('/users')}>

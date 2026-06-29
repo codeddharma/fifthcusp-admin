@@ -17,6 +17,7 @@ import { formatDateTime } from '@/lib/utils/format'
 import { toApiError } from '@/lib/api/errors'
 import { DAY_NAMES, type AvailabilityWindow } from '@/types/availabilityWindow'
 import type { ConsultationEvent } from '@/types/consultationEvent'
+import { useAuth } from '@/lib/auth/useAuth'
 
 type Tab = 'calendar' | 'availability'
 
@@ -169,11 +170,13 @@ function EventDetailModal({
   onClose,
   onDelete,
   deleting,
+  canDelete,
 }: {
   event: ConsultationEvent | null
   onClose: () => void
   onDelete: (id: string) => void
   deleting: boolean
+  canDelete: boolean
 }) {
   if (!event) return null
   const customer = typeof event.customerId === 'object' ? event.customerId : null
@@ -211,14 +214,16 @@ function EventDetailModal({
       </div>
       <div className="flex justify-end gap-2 mt-5">
         <Button variant="ghost" onClick={onClose}>Close</Button>
-        <Button
-          variant="danger"
-          onClick={() => onDelete(event._id)}
-          loading={deleting}
-          leftIcon={<Trash2 size={14} />}
-        >
-          Cancel Event
-        </Button>
+        {canDelete && (
+          <Button
+            variant="danger"
+            onClick={() => onDelete(event._id)}
+            loading={deleting}
+            leftIcon={<Trash2 size={14} />}
+          >
+            Cancel Event
+          </Button>
+        )}
       </div>
     </Modal>
   )
@@ -229,6 +234,8 @@ function EventDetailModal({
 // ──────────────────────────────────────────────
 
 export function ConsultationEventsPage() {
+  const { user } = useAuth()
+  const canDelete = user?.role === 'admin' || user?.role === 'manager'
   const qc = useQueryClient()
   const [tab, setTab] = useState<Tab>('calendar')
   const [selectedEvent, setSelectedEvent] = useState<ConsultationEvent | null>(null)
@@ -312,6 +319,7 @@ export function ConsultationEventsPage() {
         onClose={() => setSelectedEvent(null)}
         onDelete={remove.mutate}
         deleting={remove.isPending}
+        canDelete={canDelete}
       />
     </div>
   )

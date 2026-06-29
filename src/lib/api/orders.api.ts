@@ -16,6 +16,9 @@ export const OrdersApi = {
   updateStatus: (id: string, orderStatus: OrderStatus, note?: string) =>
     api.patch(`/orders/admin/${id}/status`, { orderStatus, note }).then((r) => unwrap<Order>(r)),
 
+  assign: (id: string, userId: string | null) =>
+    api.patch(`/orders/admin/${id}/assign`, { userId }).then((r) => unwrap<Order>(r)),
+
   purgeFiles: () => api.post('/orders/admin/purge-files').then((r) => unwrap<{ purged: number }>(r)),
 
   getDeadlines: () => api.get('/orders/admin/deadlines').then((r) => unwrap<DeadlinesResult>(r)),
