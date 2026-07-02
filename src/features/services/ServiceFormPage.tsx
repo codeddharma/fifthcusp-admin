@@ -141,6 +141,14 @@ export function ServiceFormPage() {
   const isAstrologyPage = pages.some((p) => p.page === 'astrology')
   const allowedTypes = isAstrologyPage ? ASTROLOGY_TYPES : GENERIC_TYPES
 
+  useEffect(() => {
+    const current = form.getValues('type')
+    if (!allowedTypes.includes(current)) {
+      form.setValue('type', allowedTypes[0], { shouldValidate: false })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAstrologyPage])
+
   const goNext = async (fields: (keyof ServiceFormValues)[]) => {
     const valid = await form.trigger(fields)
     if (valid) setStep((s) => Math.min(3, s + 1) as Step)
