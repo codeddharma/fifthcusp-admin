@@ -134,7 +134,6 @@ export function ServiceFormPage() {
     onError: (e) => toast.error(toApiError(e).message),
   })
 
-  if (isEdit && isLoading) return null
   const submitting = create.isPending || update.isPending
   const errs = form.formState.errors
   const pages = form.watch('pages')
@@ -148,6 +147,8 @@ export function ServiceFormPage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAstrologyPage])
+
+  if (isEdit && isLoading) return null
 
   const goNext = async (fields: (keyof ServiceFormValues)[]) => {
     const valid = await form.trigger(fields)
