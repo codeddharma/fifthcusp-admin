@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { Control, Controller, useFieldArray, useFormContext, useWatch } from 'react-hook-form'
-import { Plus, Trash2 } from 'lucide-react'
+import { ChevronDown, ChevronUp, Plus, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
@@ -25,6 +25,10 @@ export function FormInputsFieldArray({ name, control }: Props) {
           key={field.id}
           baseName={`${name}.${idx}`}
           onRemove={() => fa.remove(idx)}
+          onMoveUp={() => fa.move(idx, idx - 1)}
+          onMoveDown={() => fa.move(idx, idx + 1)}
+          isFirst={idx === 0}
+          isLast={idx === fa.fields.length - 1}
           register={register}
           errors={formState.errors}
           index={idx}
@@ -56,12 +60,16 @@ interface RowProps {
   baseName: string
   index: number
   onRemove: () => void
+  onMoveUp: () => void
+  onMoveDown: () => void
+  isFirst: boolean
+  isLast: boolean
   register: ReturnType<typeof useFormContext>['register']
   errors: Record<string, unknown>
   control: Control<any>
 }
 
-function FieldRow({ baseName, index, onRemove, register, control }: RowProps) {
+function FieldRow({ baseName, index, onRemove, onMoveUp, onMoveDown, isFirst, isLast, register, control }: RowProps) {
   const { setValue, getValues } = useFormContext()
   const type = useWatch({ control, name: `${baseName}.type` }) as FieldType | undefined
 
@@ -81,9 +89,31 @@ function FieldRow({ baseName, index, onRemove, register, control }: RowProps) {
     <div className="rounded-md border border-shell-border bg-shell-bg/40 p-3">
       <div className="mb-2 flex items-center justify-between">
         <span className="text-xs font-semibold text-shell-muted">Input #{index + 1}</span>
-        <Button type="button" variant="ghost" size="sm" onClick={onRemove} aria-label="Remove">
-          <Trash2 size={14} />
-        </Button>
+        <div className="flex items-center gap-1">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={onMoveUp}
+            disabled={isFirst}
+            aria-label="Move up"
+          >
+            <ChevronUp size={14} />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={onMoveDown}
+            disabled={isLast}
+            aria-label="Move down"
+          >
+            <ChevronDown size={14} />
+          </Button>
+          <Button type="button" variant="ghost" size="sm" onClick={onRemove} aria-label="Remove">
+            <Trash2 size={14} />
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -102,8 +132,8 @@ function FieldRow({ baseName, index, onRemove, register, control }: RowProps) {
             ))}
           </Select>
         </FormField>
-        <FormField label="Order">
-          <Input type="number" min={0} {...register(`${baseName}.order`, { valueAsNumber: true })} />
+        <FormField label="Order" hint="Use the ▲ / ▼ buttons above to re-arrange">
+          <Input type="number" value={index + 1} readOnly disabled />
         </FormField>
         <FormField label="Placeholder">
           <Input {...register(`${baseName}.placeholder`)} />

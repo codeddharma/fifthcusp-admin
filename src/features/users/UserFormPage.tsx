@@ -14,9 +14,9 @@ import { Checkbox } from '@/components/ui/Checkbox'
 import { Button } from '@/components/ui/Button'
 import { FormField } from '@/components/forms/FormField'
 import { toApiError } from '@/lib/api/errors'
-import { SERVICE_TYPES, type ServiceType } from '@/types/service'
+import { USER_SPECIALTIES, SPECIALTY_VALUES, type Specialty } from '@/lib/constants/specialties'
 
-const specialtiesField = z.array(z.enum(SERVICE_TYPES as [ServiceType, ...ServiceType[]])).default([])
+const specialtiesField = z.array(z.enum(SPECIALTY_VALUES)).default([])
 
 const createSchema = z.object({
   name: z.string().min(1),
@@ -71,9 +71,9 @@ export function UserFormPage() {
 
   const role = form.watch('role')
 
-  function toggleSpecialty(type: ServiceType) {
+  function toggleSpecialty(value: Specialty) {
     const current = form.getValues('specialties') ?? []
-    form.setValue('specialties', current.includes(type) ? current.filter((t) => t !== type) : [...current, type])
+    form.setValue('specialties', current.includes(value) ? current.filter((t) => t !== value) : [...current, value])
   }
 
   const create = useMutation({
@@ -140,15 +140,15 @@ export function UserFormPage() {
                 Specialties (which call/order types this employee can be assigned)
               </p>
               <div className="flex flex-col gap-1">
-                {SERVICE_TYPES.map((type) => (
-                  <label key={type} className="flex cursor-pointer items-center gap-2 text-sm">
+                {USER_SPECIALTIES.map(({ value, label }) => (
+                  <label key={value} className="flex cursor-pointer items-center gap-2 text-sm">
                     <input
                       type="checkbox"
-                      checked={(form.watch('specialties') ?? []).includes(type)}
-                      onChange={() => toggleSpecialty(type)}
+                      checked={(form.watch('specialties') ?? []).includes(value)}
+                      onChange={() => toggleSpecialty(value)}
                       className="rounded border-shell-border"
                     />
-                    <span>{type}</span>
+                    <span>{label}</span>
                   </label>
                 ))}
               </div>

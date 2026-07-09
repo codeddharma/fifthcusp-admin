@@ -23,6 +23,7 @@ const schema = z.object({
   description: z.string().optional(),
   discountType: z.enum(['percentage', 'flat']),
   discountValue: z.coerce.number().positive('Must be positive'),
+  maxDiscount: z.coerce.number().min(0).optional(),
   minOrderAmount: z.coerce.number().min(0).optional(),
   maxUses: z.coerce.number().min(0).optional(),
   validFrom: z.string().optional(),
@@ -66,6 +67,7 @@ export function CouponFormPage() {
       description: '',
       discountType: 'percentage',
       discountValue: 10,
+      maxDiscount: 0,
       minOrderAmount: 0,
       maxUses: 0,
       validFrom: '',
@@ -85,6 +87,7 @@ export function CouponFormPage() {
         description: existing.description ?? '',
         discountType: existing.discountType,
         discountValue: existing.discountValue,
+        maxDiscount: existing.maxDiscount ?? 0,
         minOrderAmount: existing.minOrderAmount,
         maxUses: existing.maxUses,
         validFrom: existing.validFrom ? existing.validFrom.slice(0, 10) : '',
@@ -162,6 +165,16 @@ export function CouponFormPage() {
               <Input type="number" min={0} step="0.01" {...form.register('discountValue')} />
             </FormField>
           </div>
+
+          {form.watch('discountType') === 'percentage' && (
+            <FormField
+              label="Maximum discount (₹)"
+              hint="Optional cap on the discount, e.g. 20% off up to ₹500. Leave 0 for no cap."
+              error={errs.maxDiscount?.message}
+            >
+              <Input type="number" min={0} {...form.register('maxDiscount')} />
+            </FormField>
+          )}
 
           <div className="grid grid-cols-2 gap-3">
             <FormField label="Min order amount (₹)" error={errs.minOrderAmount?.message}>

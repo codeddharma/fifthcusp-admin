@@ -55,8 +55,11 @@ export function RecurringOrderFormPage() {
   })
 
   const { data: services } = useQuery({
-    queryKey: qk.services.list({}),
+    queryKey: qk.services.list({ onlyActive: true }),
     queryFn: () => ServicesApi.list({ onlyActive: true }),
+    // Always reflect the current catalog when the page opens (new services show up).
+    staleTime: 0,
+    refetchOnMount: 'always',
   })
 
   const form = useForm<Values>({

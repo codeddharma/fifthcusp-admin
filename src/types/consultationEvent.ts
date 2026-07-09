@@ -1,7 +1,7 @@
 export interface ConsultationEvent {
   _id: string
   orderId: string | { _id: string; orderNumber: string }
-  customerId: string | { _id: string; name: string; email: string }
+  customerId: string | { _id: string; name: string; email: string; phone?: string }
   bookingTokenId: string
   title: string
   startTime: string

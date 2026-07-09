@@ -1,4 +1,4 @@
-import type { ServiceType } from './service'
+import type { Specialty } from '@/lib/constants/specialties'
 
 export type UserRole = 'admin' | 'manager' | 'employee'
 
@@ -8,7 +8,7 @@ export interface User {
   email: string
   role: UserRole
   isActive: boolean
-  specialties?: ServiceType[]
+  specialties?: Specialty[]
   createdBy?: string
   createdAt: string
   updatedAt: string
@@ -19,7 +19,7 @@ export interface CreateUserInput {
   email: string
   password: string
   role: UserRole
-  specialties?: ServiceType[]
+  specialties?: Specialty[]
 }
 
 export interface UpdateUserInput {
@@ -27,5 +27,5 @@ export interface UpdateUserInput {
   email?: string
   role?: UserRole
   isActive?: boolean
-  specialties?: ServiceType[]
+  specialties?: Specialty[]
 }

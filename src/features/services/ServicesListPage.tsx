@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ColumnDef } from '@tanstack/react-table'
-import { Plus, Trash2, Pencil } from 'lucide-react'
+import { Plus, Trash2, Pencil, Copy, CheckCheck, MessageCircle } from 'lucide-react'
 import { toast } from 'sonner'
 import { ServicesApi } from '@/lib/api/services.api'
 import { qk } from '@/lib/query/keys'
@@ -19,6 +19,58 @@ import { formatINR } from '@/lib/utils/format'
 import type { Service } from '@/types/service'
 
 const PAGE_SIZE = 20
+
+const FRONTEND_BASE = import.meta.env.VITE_FRONTEND_URL ?? 'http://localhost:3000'
+
+// Per-service "share the booking form" cell: a link to the service's public page with a
+// `?book=<SKU>` param that auto-opens the BookingModal on the storefront.
+function ServiceLinkCell({ service }: { service: Service }) {
+  const [copied, setCopied] = useState(false)
+  const page = service.pages?.[0]?.page
+
+  if (!page) {
+    return (
+      <span className="text-xs text-shell-muted" title="Assign a page to this service to generate a link">
+        —
+      </span>
+    )
+  }
+
+  const url = `${FRONTEND_BASE}/${page}?book=${service.sku}`
+
+  const copy = () => {
+    navigator.clipboard.writeText(url)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  const shareWhatsApp = () => {
+    const text = `Book "${service.title}" here: ${url}`
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer')
+  }
+
+  return (
+    <div className="flex items-center gap-1">
+      <button
+        type="button"
+        onClick={(e) => { e.stopPropagation(); copy() }}
+        className="flex items-center gap-1.5 rounded px-2 py-1 text-xs text-shell-muted hover:bg-shell-bg hover:text-shell-text"
+      >
+        {copied ? <CheckCheck size={12} /> : <Copy size={12} />}
+        {copied ? 'Copied!' : 'Copy link'}
+      </button>
+      <button
+        type="button"
+        onClick={(e) => { e.stopPropagation(); shareWhatsApp() }}
+        className="flex items-center gap-1.5 rounded px-2 py-1 text-xs text-shell-muted hover:bg-shell-bg hover:text-shell-text"
+        aria-label="Share on WhatsApp"
+      >
+        <MessageCircle size={12} />
+        WhatsApp
+      </button>
+    </div>
+  )
+}
 
 export function ServicesListPage() {
   const { user } = useAuth()
@@ -77,6 +129,11 @@ export function ServicesListPage() {
       accessorKey: 'isActiveService',
       cell: ({ getValue }) =>
         getValue<boolean>() ? <Badge tone="success">Active</Badge> : <Badge tone="warning">Inactive</Badge>,
+    },
+    {
+      header: 'Booking link',
+      id: 'bookingLink',
+      cell: ({ row }) => <ServiceLinkCell service={row.original} />,
     },
     {
       header: '',

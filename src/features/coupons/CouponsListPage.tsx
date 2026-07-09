@@ -38,10 +38,13 @@ export function CouponsListPage() {
     { header: 'Code', accessorKey: 'code', cell: ({ getValue }) => <span className="font-mono font-semibold">{getValue<string>()}</span> },
     {
       header: 'Discount',
-      cell: ({ row }) =>
-        row.original.discountType === 'percentage'
-          ? `${row.original.discountValue}%`
-          : `₹${row.original.discountValue}`,
+      cell: ({ row }) => {
+        if (row.original.discountType !== 'percentage') return `₹${row.original.discountValue}`
+        const cap = row.original.maxDiscount
+        return cap && cap > 0
+          ? `${row.original.discountValue}% (max ₹${cap})`
+          : `${row.original.discountValue}%`
+      },
     },
     {
       header: 'Uses',

@@ -4,6 +4,7 @@ export interface Coupon {
   description?: string
   discountType: 'percentage' | 'flat'
   discountValue: number
+  maxDiscount?: number
   minOrderAmount: number
   maxUses: number
   usedCount: number
@@ -23,6 +24,7 @@ export interface CreateCouponInput {
   description?: string
   discountType: 'percentage' | 'flat'
   discountValue: number
+  maxDiscount?: number
   minOrderAmount?: number
   maxUses?: number
   validFrom?: string

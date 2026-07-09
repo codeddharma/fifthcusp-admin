@@ -10,7 +10,12 @@ export interface ServiceListParams {
 
 export const ServicesApi = {
   list: (params: ServiceListParams = {}) =>
-    api.get('/services', { params }).then((r) => unwrap<Service[]>(r)),
+    api
+      .get('/services', {
+        // Backend reads `active` (not `onlyActive`); omit it unless filtering to active.
+        params: { active: params.onlyActive ? true : undefined, page: params.page, type: params.type },
+      })
+      .then((r) => unwrap<Service[]>(r)),
 
   get: (id: string) => api.get(`/services/${id}`).then((r) => unwrap<Service>(r)),
 

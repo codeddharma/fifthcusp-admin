@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import FullCalendar from '@fullcalendar/react'
 import dayGridPlugin from '@fullcalendar/daygrid'
@@ -20,6 +20,30 @@ import type { ConsultationEvent } from '@/types/consultationEvent'
 import { useAuth } from '@/lib/auth/useAuth'
 
 type Tab = 'calendar' | 'availability'
+
+// India has a fixed +05:30 offset (no DST), so we render/parse the datetime-local input in IST
+// regardless of the admin's browser timezone.
+function toISTInputValue(iso: string): string {
+  const p = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Kolkata',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  })
+    .formatToParts(new Date(iso))
+    .reduce<Record<string, string>>((acc, part) => {
+      acc[part.type] = part.value
+      return acc
+    }, {})
+  return `${p.year}-${p.month}-${p.day}T${p.hour === '24' ? '00' : p.hour}:${p.minute}`
+}
+
+function istInputToISO(local: string): string {
+  return new Date(`${local}:00+05:30`).toISOString()
+}
 
 // ──────────────────────────────────────────────
 // Availability Settings Panel
@@ -170,14 +194,27 @@ function EventDetailModal({
   onClose,
   onDelete,
   deleting,
-  canDelete,
+  onReschedule,
+  rescheduling,
+  canManage,
 }: {
   event: ConsultationEvent | null
   onClose: () => void
   onDelete: (id: string) => void
   deleting: boolean
-  canDelete: boolean
+  onReschedule: (id: string, startTime: string) => void
+  rescheduling: boolean
+  canManage: boolean
 }) {
+  const [showReschedule, setShowReschedule] = useState(false)
+  const [newAt, setNewAt] = useState('')
+
+  // Reset the reschedule sub-form whenever a different event is opened/closed.
+  useEffect(() => {
+    setShowReschedule(false)
+    setNewAt(event ? toISTInputValue(event.startTime) : '')
+  }, [event])
+
   if (!event) return null
   const customer = typeof event.customerId === 'object' ? event.customerId : null
   const order = typeof event.orderId === 'object' ? event.orderId : null
@@ -187,7 +224,9 @@ function EventDetailModal({
       <div className="space-y-3 text-sm">
         <div>
           <p className="text-gray-400">Client</p>
-          <p className="font-medium">{customer?.name ?? '—'} {customer?.email ? `(${customer.email})` : ''}</p>
+          <p className="font-medium">{customer?.name ?? '—'}</p>
+          {customer?.email && <p className="text-gray-500">{customer.email}</p>}
+          {customer?.phone && <p className="text-gray-500">{customer.phone}</p>}
         </div>
         <div>
           <p className="text-gray-400">Order</p>
@@ -212,9 +251,24 @@ function EventDetailModal({
           <p className="font-medium">{event.emailSentAt ? formatDateTime(event.emailSentAt) : 'Not sent yet'}</p>
         </div>
       </div>
+
+      {showReschedule && (
+        <div className="mt-4 rounded-lg border border-gray-200 p-3">
+          <p className="mb-2 text-sm font-medium text-gray-700">Reschedule (IST)</p>
+          <Input
+            type="datetime-local"
+            value={newAt}
+            onChange={(e) => setNewAt(e.target.value)}
+          />
+          <p className="mt-1 text-xs text-gray-400">
+            Duration stays {event.durationMinutes} minutes. The client is emailed the new time and the Meet link is unchanged.
+          </p>
+        </div>
+      )}
+
       <div className="flex justify-end gap-2 mt-5">
         <Button variant="ghost" onClick={onClose}>Close</Button>
-        {canDelete && (
+        {canManage && !showReschedule && (
           <Button
             variant="danger"
             onClick={() => onDelete(event._id)}
@@ -223,6 +277,31 @@ function EventDetailModal({
           >
             Cancel Event
           </Button>
+        )}
+        {canManage && !showReschedule && (
+          <Button
+            variant="primary"
+            onClick={() => setShowReschedule(true)}
+            leftIcon={<Clock size={14} />}
+          >
+            Reschedule
+          </Button>
+        )}
+        {canManage && showReschedule && (
+          <>
+            <Button variant="ghost" onClick={() => setShowReschedule(false)}>
+              Back
+            </Button>
+            <Button
+              variant="primary"
+              disabled={!newAt}
+              loading={rescheduling}
+              onClick={() => onReschedule(event._id, istInputToISO(newAt))}
+              leftIcon={<Clock size={14} />}
+            >
+              Save new time
+            </Button>
+          </>
         )}
       </div>
     </Modal>
@@ -250,6 +329,17 @@ export function ConsultationEventsPage() {
     mutationFn: (id: string) => ConsultationEventsApi.remove(id),
     onSuccess: () => {
       toast.success('Consultation event cancelled')
+      qc.invalidateQueries({ queryKey: qk.consultationEvents.all() })
+      setSelectedEvent(null)
+    },
+    onError: (e) => toast.error(toApiError(e).message),
+  })
+
+  const reschedule = useMutation({
+    mutationFn: ({ id, startTime }: { id: string; startTime: string }) =>
+      ConsultationEventsApi.reschedule(id, startTime),
+    onSuccess: () => {
+      toast.success('Consultation rescheduled')
       qc.invalidateQueries({ queryKey: qk.consultationEvents.all() })
       setSelectedEvent(null)
     },
@@ -319,7 +409,9 @@ export function ConsultationEventsPage() {
         onClose={() => setSelectedEvent(null)}
         onDelete={remove.mutate}
         deleting={remove.isPending}
-        canDelete={canDelete}
+        onReschedule={(id, startTime) => reschedule.mutate({ id, startTime })}
+        rescheduling={reschedule.isPending}
+        canManage={canDelete}
       />
     </div>
   )
