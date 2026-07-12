@@ -22,6 +22,12 @@ const PAGE_SIZE = 20
 
 const FRONTEND_BASE = import.meta.env.VITE_FRONTEND_URL ?? 'http://localhost:3000'
 
+// Page keys now match storefront routes (tarot-reading, astrology, vastu, …) after the data
+// migration. The only exception is `home`, whose route is the site root `/` (no slug).
+const PAGE_ROUTES: Record<string, string> = {
+  home: '',
+}
+
 // Per-service "share the booking form" cell: a link to the service's public page with a
 // `?book=<SKU>` param that auto-opens the BookingModal on the storefront.
 function ServiceLinkCell({ service }: { service: Service }) {
@@ -36,7 +42,8 @@ function ServiceLinkCell({ service }: { service: Service }) {
     )
   }
 
-  const url = `${FRONTEND_BASE}/${page}?book=${service.sku}`
+  const routeSegment = PAGE_ROUTES[page] ?? page
+  const url = `${FRONTEND_BASE}/${routeSegment}?book=${service.sku}`
 
   const copy = () => {
     navigator.clipboard.writeText(url)

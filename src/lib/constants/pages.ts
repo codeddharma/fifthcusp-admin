@@ -1,9 +1,8 @@
 export const PAGE_KEYS = [
   'home',
   'astrology',
-  'numerology',
   'vastu',
-  'tarot',
+  'tarot-reading',
   'energy',
   'manifestation',
   'wealth',
